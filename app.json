@@ -26,6 +26,7 @@
     },
     "plugins": [
       "expo-router",
+      "./modules/device-info/plugin",
       [
         "expo-splash-screen",
         {

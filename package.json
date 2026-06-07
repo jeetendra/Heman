@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "device-info": "file:./modules/device-info",
     "@expo/ui": "~56.0.16",
     "expo": "~56.0.9",
     "expo-bluetooth": "^0.0.0",

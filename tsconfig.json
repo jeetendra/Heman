@@ -8,6 +8,9 @@
       ],
       "@/assets/*": [
         "./assets/*"
+      ],
+      "device-info": [
+        "./modules/device-info/src/index.ts"
       ]
     }
   },

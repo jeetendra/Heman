@@ -1,0 +1,17 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+// group and version are required by expo-module-gradle-plugin.
+// For a local module, these values are arbitrary but must be present.
+group = 'com.anonymous.myexpoapp'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.deviceinfo"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
