@@ -1,6 +1,6 @@
 import * as Device from 'expo-device';
 import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedIcon } from '@/components/animated-icon';
 import { HintRow } from '@/components/hint-row';
@@ -8,6 +8,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useEffect, useState } from 'react';
+import { ScrollView } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+
 
 function getDevMenuHint() {
   if (Platform.OS === 'web') {
@@ -28,35 +32,70 @@ function getDevMenuHint() {
   );
 }
 
+const fetchPosts = async () => {
+  const posts = await fetch("https://jsonplaceholder.typicode.com/posts");
+  return posts.json();
+}
+
+
 export default function HomeScreen() {
+
+  const insets = useSafeAreaInsets();
+
+  const { data: posts, error, isLoading } = useQuery({
+    queryKey: ["posts"],
+    queryFn: fetchPosts
+  })
+
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
+      <SafeAreaProvider>
+        <ScrollView style={styles.scrollView} contentContainerStyle={{
+          // Smoothly injects dynamic padding to the top and bottom of the list
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingHorizontal: 16,
+        }}>
+          <ThemedView style={styles.heroSection}>
+            <AnimatedIcon />
+            <ThemedText type="title" style={styles.title}>
+              Welcome to&nbsp;Expo
+            </ThemedText>
+          </ThemedView>
+
+          <ThemedText type="code" style={styles.code}>
+            get started
           </ThemedText>
-        </ThemedView>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+          <ThemedView type="backgroundElement" style={styles.stepContainer}>
+            <HintRow
+              title="Try editing"
+              hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+            />
+            <HintRow title="Dev tools" hint={getDevMenuHint()} />
+            <HintRow
+              title="Fresh start"
+              hint={<ThemedText type="code">npm run reset-project</ThemedText>}
+            />
+          </ThemedView>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
+          <ThemedView>
+            {
+              posts?.map(d => {
+                return <>
+                  <ThemedText type="title" style={styles.title}>
+                    {d.title}
+                  </ThemedText>
+                  <ThemedText type="code" style={styles.code}>
+                    {d.body}
+                  </ThemedText>
+                </>
+              })
+            }
+          </ThemedView>
+        </ScrollView>
+      </SafeAreaProvider>
     </ThemedView>
   );
 }
@@ -74,6 +113,10 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#f5f5f5', // This background color will fill the whole screen beautifully
   },
   heroSection: {
     alignItems: 'center',
