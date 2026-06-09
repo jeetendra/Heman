@@ -31,6 +31,10 @@ export default function AppTabs() {
         name="features"
         options={{ title: 'Features' }}
       />
+      <Tabs.Screen
+        name="feed"
+        options={{ title: 'Feed' }}
+      />
     </Tabs>
   );
 }
