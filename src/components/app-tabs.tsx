@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
@@ -10,31 +11,44 @@ export default function AppTabs() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.text,
+        tabBarActiveTintColor:   colors.text,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           backgroundColor: colors.background,
-          borderTopColor: colors.backgroundElement,
+          borderTopColor:  colors.backgroundElement,
         },
         headerShown: false,
-      }}>
-      {/* name must exactly match the filename in src/app/ */}
+      }}
+    >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Home' }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{ title: 'Explore' }}
+        options={{
+          title: 'Feed',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'house.fill', android: 'home', web: 'home' }}
+              size={24}
+              tintColor={color}
+            />
+          ),
+        }}
       />
       <Tabs.Screen
         name="features"
-        options={{ title: 'Features' }}
+        options={{
+          title: 'Features',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
+              size={24}
+              tintColor={color}
+            />
+          ),
+        }}
       />
-      <Tabs.Screen
-        name="feed"
-        options={{ title: 'Feed' }}
-      />
+
+      {/* Exists as a file but should not appear in the tab bar */}
+      <Tabs.Screen name="device-info" options={{ href: null }} />
     </Tabs>
   );
 }

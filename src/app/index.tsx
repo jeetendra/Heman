@@ -1,109 +1,165 @@
-import { StyleSheet } from 'react-native';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useState } from 'react';
+import {
+  FlatList,
+  Modal,
+  StyleSheet,
+  TouchableOpacity,
+  useColorScheme,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Colors, Spacing } from '@/constants/theme';
+import { CreatePostScreen } from '@/features/create-post';
+import {
+  FeedCard,
+  FeedFooter,
+  FeedHeader,
+  FeedSkeleton,
+  useFeed,
+  type FeedPost,
+} from '@/features/feed';
 
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { ScrollView } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+export default function FeedScreen() {
+  const insets  = useSafeAreaInsets();
+  const scheme  = useColorScheme() ?? 'light';
+  const colors  = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const [showCreate, setShowCreate] = useState(false);
 
+  const {
+    posts,
+    totalCount,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useFeed();
 
-const fetchPosts = async () => {
-  const posts = await fetch("https://jsonplaceholder.typicode.com/posts");
-  return posts.json();
-}
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const renderItem = useCallback(
+    ({ item }: { item: FeedPost }) => <FeedCard post={item} />,
+    [],
+  );
 
-export default function HomeScreen() {
+  // ── Loading ───────────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.container}>
+        <FeedHeader totalCount={0} />
+        <FeedSkeleton />
+      </ThemedView>
+    );
+  }
 
-  const insets = useSafeAreaInsets();
+  // ── Error ─────────────────────────────────────────────────────────────────
+  if (isError) {
+    return (
+      <ThemedView style={[styles.container, styles.centered]}>
+        <ThemedText style={styles.errorEmoji}>⚠️</ThemedText>
+        <ThemedText type="smallBold" style={styles.errorTitle}>
+          Could not load feed
+        </ThemedText>
+        <ThemedText type="small" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+          {(error as Error).message}
+        </ThemedText>
+        <ThemedText
+          type="small"
+          style={[styles.retryLink, { color: colors.text }]}
+          onPress={() => refetch()}
+        >
+          Tap to retry
+        </ThemedText>
+      </ThemedView>
+    );
+  }
 
-  const { data: posts, error, isLoading } = useQuery({
-    queryKey: ["posts"],
-    queryFn: fetchPosts
-  })
-
+  // ── Feed ──────────────────────────────────────────────────────────────────
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaProvider>
-        <ScrollView style={styles.scrollView} contentContainerStyle={{
-          // Smoothly injects dynamic padding to the top and bottom of the list
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom,
-          paddingHorizontal: 16,
-        }}>
-          <ThemedView style={styles.heroSection}>
-            <AnimatedIcon />
-            <ThemedText type="title" style={styles.title}>
-              Welcome to&nbsp;Expo
-            </ThemedText>
-          </ThemedView>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        onRefresh={refetch}
+        refreshing={isRefetching}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.4}
+        ListHeaderComponent={<FeedHeader totalCount={totalCount} />}
+        stickyHeaderIndices={[0]}
+        ListFooterComponent={
+          <FeedFooter
+            isFetchingNextPage={isFetchingNextPage}
+            hasNextPage={!!hasNextPage}
+            postCount={posts.length}
+          />
+        }
+        contentContainerStyle={{
+          paddingTop:    insets.top,
+          paddingBottom: insets.bottom + 80, // room for FAB
+        }}
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews
+      />
 
-            {
-              posts?.map(d => {
-                return <ThemedView key={d.id}>
-                  <ThemedText type="title" style={styles.title2}>
-                    {d.title}
-                  </ThemedText>
-                  <ThemedText type="small" style={styles.description}>
-                    {d.body}
-                  </ThemedText>
-                </ThemedView>
-              })
-            }
-          
-        </ScrollView>
-      </SafeAreaProvider>
+      {/* ── FAB — open create post ── */}
+      <TouchableOpacity
+        style={[styles.fab, { bottom: insets.bottom + Spacing.four }]}
+        onPress={() => setShowCreate(true)}
+        activeOpacity={0.85}
+      >
+        <ThemedText style={styles.fabIcon}>＋</ThemedText>
+      </TouchableOpacity>
+
+      {/* ── Create Post modal ── */}
+      <Modal
+        visible={showCreate}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowCreate(false)}
+      >
+        <CreatePostScreen onDismiss={() => setShowCreate(false)} />
+      </Modal>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  centered: {
+    alignItems:     'center',
     justifyContent: 'center',
-    flexDirection: 'row',
+    gap:            Spacing.two,
+    padding:        Spacing.four,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+  errorEmoji:  { fontSize: 40 },
+  errorTitle:  { marginTop: Spacing.two, fontSize: 16 },
+  retryLink: {
+    marginTop:          Spacing.three,
+    fontSize:           14,
+    textDecorationLine: 'underline',
   },
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#f5f5f5', // This background color will fill the whole screen beautifully
-  },
-  heroSection: {
-    alignItems: 'center',
+  fab: {
+    position:       'absolute',
+    right:          Spacing.four,
+    width:          56,
+    height:         56,
+    borderRadius:   28,
+    backgroundColor:'#3897f0',
+    alignItems:     'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    shadowColor:    '#000',
+    shadowOffset:   { width: 0, height: 2 },
+    shadowOpacity:  0.25,
+    shadowRadius:   4,
+    elevation:      6,
   },
-  title: {
-    textAlign: 'center',
-  },
-  title2: {
-    fontSize: 16,
-    lineHeight: 18,
-  },
-  description: {
-    fontSize: 12,
-    lineHeight: 14,
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  fabIcon: { fontSize: 28, color: '#fff', lineHeight: 32 },
 });

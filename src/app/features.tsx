@@ -1,5 +1,5 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { File, Paths } from 'expo-file-system/next';
+import { File, Paths } from 'expo-file-system';
 import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 import {
