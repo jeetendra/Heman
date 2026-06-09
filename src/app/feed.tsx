@@ -1,10 +1,17 @@
-import { useCallback } from 'react';
-import { FlatList, StyleSheet, useColorScheme } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  FlatList,
+  Modal,
+  StyleSheet,
+  TouchableOpacity,
+  useColorScheme,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
+import { CreatePostScreen } from '@/features/create-post';
 import {
   FeedCard,
   FeedFooter,
@@ -15,9 +22,10 @@ import {
 } from '@/features/feed';
 
 export default function FeedScreen() {
-  const insets = useSafeAreaInsets();
-  const scheme = useColorScheme() ?? 'light';
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const insets  = useSafeAreaInsets();
+  const scheme  = useColorScheme() ?? 'light';
+  const colors  = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const [showCreate, setShowCreate] = useState(false);
 
   const {
     posts,
@@ -94,36 +102,64 @@ export default function FeedScreen() {
           />
         }
         contentContainerStyle={{
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom + Spacing.five,
+          paddingTop:    insets.top,
+          paddingBottom: insets.bottom + 80, // room for FAB
         }}
         showsVerticalScrollIndicator={false}
         removeClippedSubviews
       />
+
+      {/* ── FAB — open create post ── */}
+      <TouchableOpacity
+        style={[styles.fab, { bottom: insets.bottom + Spacing.four }]}
+        onPress={() => setShowCreate(true)}
+        activeOpacity={0.85}
+      >
+        <ThemedText style={styles.fabIcon}>＋</ThemedText>
+      </TouchableOpacity>
+
+      {/* ── Create Post modal ── */}
+      <Modal
+        visible={showCreate}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setShowCreate(false)}
+      >
+        <CreatePostScreen onDismiss={() => setShowCreate(false)} />
+      </Modal>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   centered: {
-    alignItems: 'center',
+    alignItems:     'center',
     justifyContent: 'center',
-    gap: Spacing.two,
-    padding: Spacing.four,
+    gap:            Spacing.two,
+    padding:        Spacing.four,
   },
-  errorEmoji: {
-    fontSize: 40,
-  },
-  errorTitle: {
-    marginTop: Spacing.two,
-    fontSize: 16,
-  },
+  errorEmoji:  { fontSize: 40 },
+  errorTitle:  { marginTop: Spacing.two, fontSize: 16 },
   retryLink: {
-    marginTop: Spacing.three,
-    fontSize: 14,
+    marginTop:          Spacing.three,
+    fontSize:           14,
     textDecorationLine: 'underline',
   },
+  fab: {
+    position:       'absolute',
+    right:          Spacing.four,
+    width:          56,
+    height:         56,
+    borderRadius:   28,
+    backgroundColor:'#3897f0',
+    alignItems:     'center',
+    justifyContent: 'center',
+    shadowColor:    '#000',
+    shadowOffset:   { width: 0, height: 2 },
+    shadowOpacity:  0.25,
+    shadowRadius:   4,
+    elevation:      6,
+  },
+  fabIcon: { fontSize: 28, color: '#fff', lineHeight: 32 },
 });
